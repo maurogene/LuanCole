@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mate Visual</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#253858;--muted:#6b7a99;--blue:#4dabf7;--green:#40c057;--red:#fa5252;--yellow:#fcc419;--purple:#845ef7;--cs:38px}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Baloo 2',ui-rounded,'Segoe UI Rounded','Segoe UI',system-ui,sans-serif;color:var(--ink);
+  background:linear-gradient(160deg,#e7f5ff 0%,#f3f0ff 50%,#fff4e6 100%);min-height:100vh;user-select:none;-webkit-user-select:none;overflow-x:hidden}
+button{font-family:inherit;cursor:pointer;color:inherit}
+select,input{font-family:inherit;font-size:18px}
+.hidden{display:none!important}
+#app{max-width:1060px;margin:0 auto;padding:16px}
+
+/* ---------- HOME ---------- */
+.home-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.title{display:flex;align-items:center;gap:10px}
+.title h1{font-size:clamp(34px,5vw,50px);margin:0;line-height:1;color:var(--purple);text-shadow:0 4px 0 #d0bfff}
+.title .mascot{font-size:52px;animation:bob 2.4s ease-in-out infinite}
+.rankcard{flex:1;min-width:280px;display:flex;align-items:center;gap:14px;background:#fff;border-radius:22px;padding:10px 18px;box-shadow:0 6px 0 #dbe4f0}
+.rk-icon{font-size:48px;width:64px;height:64px;display:grid;place-items:center;background:#fff3bf;border-radius:18px;flex:none}
+.rk-body{flex:1;min-width:0}
+.rk-name{font-size:24px;font-weight:800;line-height:1.1}
+.rk-sub{font-size:16px;color:var(--muted)}
+.xpbar{height:16px;background:#e9ecef;border-radius:999px;overflow:hidden;margin:4px 0}
+.xpfill{height:100%;background:linear-gradient(90deg,#ffd43b,#ff922b);border-radius:999px;transition:width 1s cubic-bezier(.3,1,.5,1)}
+.rk-stars{font-size:22px;font-weight:800;flex:none;text-align:center;line-height:1.1}
+.rk-stars small{display:block;font-size:14px;color:var(--muted);font-weight:700}
+
+.mapwrap{background:#fff;border-radius:28px;padding:18px 10px 22px;box-shadow:0 8px 0 #dbe4f0;position:relative}
+.map{display:grid;gap:26px 6px;position:relative;padding:10px 0}
+.map svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.node{border:none;background:none;display:flex;flex-direction:column;align-items:center;position:relative;z-index:1;padding:0;transition:transform .15s}
+.node:hover:not(.locked){transform:translateY(-4px) scale(1.04)}
+.disc{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;font-size:40px;
+  background:radial-gradient(circle at 35% 30%,#fff8,transparent 45%),hsl(var(--h) 80% 62%);box-shadow:0 7px 0 hsl(var(--h) 60% 45%);border:4px solid #fff}
+.node.locked .disc{background:#dee2e6;box-shadow:0 7px 0 #adb5bd;font-size:30px;filter:grayscale(1)}
+.node.locked{cursor:not-allowed}
+.node.locked .lvname,.node.locked .lvnum{color:#adb5bd}
+.node.cur .disc{animation:ring 1.6s infinite}
+.lvnum{font-size:15px;font-weight:800;color:var(--muted);margin-top:6px;line-height:1}
+.lvnum,.lvname,.lvstars{background:#fff;border-radius:8px;padding:0 6px}
+.lvname{font-size:17px;font-weight:800;line-height:1.1;text-align:center;max-width:150px}
+.lvstars{font-size:20px;color:#fab005;letter-spacing:2px;line-height:1}
+.lvstars span{color:#dee2e6}
+.me{position:absolute;top:-30px;right:calc(50% - 62px);font-size:36px;animation:bob 1.6s ease-in-out infinite}
+.home-btns{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:22px}
+.shake{animation:shake .45s}
+
+/* ---------- HUD ---------- */
+.hud{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border-radius:20px;padding:8px 14px;box-shadow:0 6px 0 #dbe4f0;margin-bottom:14px}
+.pill{background:#f1f3f5;border-radius:999px;padding:2px 14px;font-weight:800;font-size:22px;display:flex;align-items:center;gap:6px;transition:transform .2s}
+.pill.bump{animation:bump .4s}
+.pill.hot{background:#fff0e0;color:#e8590c}
+.chip{font-weight:800;font-size:18px;color:var(--purple);background:#f3f0ff;border-radius:999px;padding:3px 14px}
+.dots{display:flex;gap:7px;flex:1;justify-content:center;flex-wrap:wrap}
+.dot{width:16px;height:16px;border-radius:50%;background:#e9ecef;transition:.3s}
+.dot.cur{background:var(--blue);transform:scale(1.35)}
+.dot.ok{background:var(--green)}.dot.meh{background:var(--yellow)}
+.iconbtn{border:none;background:#f1f3f5;border-radius:12px;font-size:20px;padding:4px 10px;line-height:1.4}
+.iconbtn:hover{background:#e7f5ff}
+
+/* ---------- STAGE ---------- */
+.stage{margin-top:34px;background:#fff;border-radius:28px;padding:18px 20px 22px;box-shadow:0 8px 0 #dbe4f0;position:relative;min-height:440px}
+.task{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:12px;animation:rise .4s}
+.eq{font-size:clamp(40px,6vw,58px);font-weight:800;line-height:1;background:#f3f0ff;border-radius:20px;padding:8px 22px;color:var(--purple)}
+.qmark{display:inline-block;min-width:.8em;text-align:center;color:#e64980}
+.qmark.solved{color:var(--green);animation:pop .5s}
+.instr{font-size:22px;flex:1;min-width:220px;line-height:1.25}
+.helper{display:flex;align-items:center;gap:10px;position:absolute;right:18px;top:-30px;z-index:5}
+.owl{font-size:54px;animation:bob 2.4s ease-in-out infinite}
+.bubble{background:#fff;border:3px solid var(--purple);border-radius:18px;padding:4px 14px;font-size:19px;font-weight:700;max-width:340px;opacity:0;transform:scale(.8);transition:.25s;line-height:1.2}
+.bubble.on{opacity:1;transform:scale(1)}
+
+/* story */
+.story{display:flex;gap:14px;align-items:flex-start;background:#fff9db;border:3px solid #ffe066;border-radius:22px;padding:14px 18px;margin-bottom:14px;animation:rise .4s}
+.story-ico{font-size:44px;line-height:1}
+.story-text{font-size:25px;line-height:1.35;font-weight:600}
+.story.compact .story-text{font-size:20px}
+.story.compact .story-ico{font-size:30px}
+.num{background:#fff;border-radius:8px;padding:0 5px;border-bottom:3px solid #ffd43b;cursor:pointer;font-weight:800;transition:.15s}
+.num.mark{background:#ffd43b}
+.story-tip{font-size:15px;color:#e67700;margin-top:4px}
+.opq{text-align:center;animation:rise .4s}
+.opq .q{font-size:24px;font-weight:800;margin-bottom:10px}
+.ops{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.opbtn{display:flex;align-items:center;gap:12px;border:none;border-radius:22px;padding:12px 22px;background:#fff;border:4px solid var(--c);box-shadow:0 6px 0 var(--c);text-align:left;min-width:250px;transition:transform .15s}
+.opbtn:hover{transform:translateY(-3px)}
+.opbtn .opsym{width:58px;height:58px;border-radius:16px;background:var(--c);color:#fff;font-size:44px;font-weight:800;display:grid;place-items:center;flex:none}
+.opbtn b{display:block;font-size:24px;line-height:1}
+.opbtn small{font-size:16px;color:var(--muted)}
+.opbtn.wrong{opacity:.4;animation:shake .45s;cursor:not-allowed}
+.opbtn.right{background:#ebfbee;animation:pop .45s}
+
+.cube{display:inline-block;width:var(--cs);height:var(--cs);border-radius:7px;background:var(--blue);margin:2px;
+  box-shadow:inset -3px -4px 0 rgba(0,0,0,.18),inset 3px 3px 0 rgba(255,255,255,.45);flex:none}
+
+/* board (multiplication + grouping) */
+.mul-area{display:flex;gap:18px;align-items:stretch;animation:rise .4s}
+.tray{width:230px;flex:none;background:#fff9db;border:3px dashed #ffe066;border-radius:22px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.tray-title{font-size:22px;font-weight:800;color:#e67700}
+.rod{display:flex;flex-wrap:nowrap;padding:5px;border-radius:12px;background:#ffffffaa;cursor:grab;touch-action:none;transition:transform .15s;max-width:100%}
+.tray .rod{flex-wrap:wrap;justify-content:center}
+.rod:hover{transform:scale(1.05)}
+.rod .cube{background:#ff922b}
+.tray-hint{color:var(--muted);font-size:17px;line-height:1.2}
+.board{flex:1;min-height:330px;border-radius:22px;background:
+  linear-gradient(#eef3fb 1px,transparent 1px) 0 0/22px 22px,linear-gradient(90deg,#eef3fb 1px,#fbfdff 1px) 0 0/22px 22px;
+  border:3px solid #dbe4f0;padding:12px;position:relative;transition:border-color .2s}
+.board.over{border-color:var(--blue);box-shadow:0 0 0 6px #d0ebff}
+.board-empty{position:absolute;inset:0;display:grid;place-items:center;font-size:26px;color:#adb5bd;font-weight:700;pointer-events:none}
+.rows{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.row{display:flex;align-items:center;border-radius:12px;padding:1px 4px;cursor:pointer;transition:background .2s}
+.board:not(.locked) .row:hover{background:#ffe3e3}
+.row.drop-in{animation:dropin .4s cubic-bezier(.3,1.5,.6,1)}
+.row.leaving{animation:leave .25s forwards}
+.row.counted{animation:pop .35s}
+.row-label{font-weight:800;font-size:22px;margin-left:10px;color:var(--purple);opacity:0;transform:translateX(-8px);transition:.25s;min-width:40px}
+.row-label.show{opacity:1;transform:none}
+.grpnum{width:30px;height:30px;border-radius:50%;background:var(--purple);color:#fff;font-weight:800;display:grid;place-items:center;margin-right:6px;font-size:18px;transform:scale(0);transition:transform .3s cubic-bezier(.3,1.6,.6,1)}
+.grpnum.show{transform:scale(1)}
+.board.locked{border-color:var(--green)}
+
+/* division */
+.pile-wrap{background:#fff9db;border:3px dashed #ffe066;border-radius:22px;padding:10px 14px;margin-bottom:12px;transition:.2s;animation:rise .4s}
+.pile-wrap.over{border-color:var(--blue);box-shadow:0 0 0 6px #d0ebff}
+.pile-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.pile-title{font-size:21px;font-weight:800;color:#e67700;flex:1}
+.pile{display:flex;flex-wrap:wrap;min-height:calc(var(--cs) + 8px)}
+.dcube{background:#ff922b;cursor:grab;touch-action:none}
+.dcube:hover{filter:brightness(1.12)}
+.plates{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.plate{--pc:#4dabf7;flex:1 1 120px;max-width:190px;min-height:180px;border-radius:26px 26px 20px 20px;border:4px solid var(--pc);background:color-mix(in srgb,var(--pc) 14%,white);
+  display:flex;flex-direction:column;align-items:center;padding:8px 6px 26px;position:relative;transition:box-shadow .2s}
+.plate.over{box-shadow:0 0 0 6px color-mix(in srgb,var(--pc) 35%,white)}
+.plate.gulp{animation:gulp .3s}
+.plate.happy{animation:jump .6s ease 2}
+.plate.flash{animation:flash .5s 3}
+.face{display:flex;gap:10px;align-items:center;position:relative;height:40px;margin-bottom:4px}
+.eye{width:22px;height:22px;background:#fff;border-radius:50%;border:2px solid var(--ink);position:relative}
+.eye::after{content:'';position:absolute;width:9px;height:9px;background:var(--ink);border-radius:50%;left:6px;top:7px}
+.mouth{position:absolute;left:50%;bottom:-2px;width:22px;height:9px;border:3px solid var(--ink);border-top:none;border-radius:0 0 14px 14px;transform:translateX(-50%);transition:.3s}
+.plate.happy .mouth,.plate.fed .mouth{height:14px;width:30px;background:#ff8787}
+.pcubes{display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;flex:1;width:100%}
+.badge{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%) scale(0);background:var(--pc);color:#fff;font-weight:800;font-size:22px;border-radius:999px;min-width:40px;padding:0 10px;text-align:center;transition:transform .3s cubic-bezier(.3,1.6,.6,1)}
+.badge.show{transform:translateX(-50%) scale(1)}
+
+/* status, buttons, choices */
+.status{margin-top:12px;font-size:22px;text-align:center;font-weight:700;color:var(--muted);min-height:34px}
+.status.good{color:var(--green)}.status.warn{color:#e8590c}
+.btn{border:none;border-radius:16px;font-size:20px;font-weight:800;padding:8px 18px;background:var(--blue);color:#fff;box-shadow:0 5px 0 #1c7ed6;transition:transform .1s}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #1c7ed6}
+.btn:disabled{opacity:.5}
+.btn.alt{background:#f1f3f5;color:var(--ink);box-shadow:0 5px 0 #ced4da}
+.btn.green{background:var(--green);box-shadow:0 5px 0 #2b8a3e}
+.btn.red{background:var(--red);box-shadow:0 5px 0 #c92a2a}
+.choices{margin-top:10px;text-align:center;animation:rise .4s}
+.choices .q{font-size:24px;font-weight:800;margin-bottom:10px}
+.opts{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.opt{width:96px;height:96px;border-radius:50%;border:none;font-size:40px;font-weight:800;color:#fff;background:var(--c);box-shadow:0 7px 0 rgba(0,0,0,.2);transition:transform .15s}
+.opt:hover{transform:translateY(-5px) scale(1.06)}
+.opt.wrong{background:#ced4da!important;animation:shake .45s;cursor:not-allowed}
+.opt.right{background:var(--green)!important;animation:pop .5s;box-shadow:0 0 0 8px #b2f2bb}
+
+/* fx */
+.ghost{position:fixed!important;pointer-events:none;z-index:1000;margin:0!important;opacity:.92;filter:drop-shadow(0 10px 12px rgba(0,0,0,.25))}
+.floatpts{position:fixed;z-index:1001;font-size:44px;font-weight:800;color:var(--green);pointer-events:none;animation:floatup 1.2s forwards;text-shadow:0 3px 0 #fff}
+.confetti{position:fixed;top:-20px;width:11px;height:15px;border-radius:3px;z-index:3000;pointer-events:none;animation:fall linear forwards}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:700;font-size:19px;padding:10px 22px;border-radius:999px;z-index:4000;animation:rise .3s}
+
+/* end */
+.end{text-align:center;background:#fff;border-radius:30px;padding:26px 20px;box-shadow:0 8px 0 #dbe4f0;max-width:640px;margin:20px auto}
+.endlv{font-size:20px;font-weight:800;color:var(--muted)}
+.end h2{font-size:46px;margin:0;color:var(--purple);line-height:1.1}
+.bigstars{font-size:80px;margin:6px 0;letter-spacing:6px}
+.bigstars span{display:inline-block;opacity:.18;filter:grayscale(1);transition:.3s}
+.bigstars span.on{opacity:1;filter:none;animation:pop .6s}
+.stats{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:10px 0 16px}
+.stat{background:#f8f9fa;border-radius:18px;padding:6px 16px;min-width:120px}
+.stat b{display:block;font-size:32px;color:var(--ink)}
+.stat span{color:var(--muted);font-size:16px}
+.record{color:#e8590c;font-size:24px;font-weight:800;animation:pulse 1s infinite}
+.xpbox{background:#fff9db;border-radius:18px;padding:10px 18px;margin:0 auto 14px;max-width:460px;text-align:left}
+.xphead{display:flex;justify-content:space-between;font-weight:800;font-size:20px}
+.xpgain{color:#e67700}
+.need{background:#e7f5ff;color:#1864ab;border-radius:16px;padding:8px 14px;font-size:18px;font-weight:700;margin-bottom:14px}
+.endbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* overlays & modals */
+.lvup,.modal-bg{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;background:rgba(37,56,88,.55);animation:fadein .3s;padding:16px}
+.rays{position:absolute;width:160vmax;height:160vmax;background:repeating-conic-gradient(#fff3 0 10deg,transparent 10deg 20deg);animation:spin 18s linear infinite;pointer-events:none}
+.lvup .confetti{z-index:0}
+.lvcard{position:relative;z-index:1;background:#fff;border-radius:32px;padding:28px 34px;text-align:center;max-width:420px;box-shadow:0 10px 0 #d0bfff;animation:zoomin .5s cubic-bezier(.3,1.5,.6,1)}
+.lvicon{font-size:96px;line-height:1.1;animation:bob 1.6s ease-in-out infinite}
+.lvcard h2{font-size:38px;margin:4px 0;color:var(--purple);line-height:1.1}
+.lvcard p{font-size:21px;margin:0 0 16px}
+.modal{background:#fff;border-radius:26px;padding:22px 26px;max-width:460px;width:100%;box-shadow:0 10px 0 #dbe4f0;animation:zoomin .3s}
+.modal h2{margin:0 0 10px;font-size:30px}
+.modal p{font-size:19px;margin:0 0 14px}
+.modal label{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:700;margin:8px 0}
+.modal select{border:2px solid #dee2e6;border-radius:10px;padding:4px 8px;flex:1}
+.modal input[type=checkbox]{width:22px;height:22px}
+.mbtns{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+
+#print{display:none}
+
+@keyframes bob{50%{transform:translateY(-8px)}}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+@keyframes bump{50%{transform:scale(1.3)}}
+@keyframes pulse{50%{transform:scale(1.06)}}
+@keyframes ring{0%{box-shadow:0 7px 0 hsl(var(--h) 60% 45%),0 0 0 0 hsl(var(--h) 80% 62% / .6)}100%{box-shadow:0 7px 0 hsl(var(--h) 60% 45%),0 0 0 18px hsl(var(--h) 80% 62% / 0)}}
+@keyframes dropin{from{transform:translateY(-30px) scale(.8);opacity:0}}
+@keyframes leave{to{transform:translateX(60px);opacity:0}}
+@keyframes gulp{50%{transform:scale(1.07,.93)}}
+@keyframes jump{30%{transform:translateY(-16px)}60%{transform:translateY(0)}}
+@keyframes flash{50%{box-shadow:0 0 0 10px #ffe066}}
+@keyframes shake{20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
+@keyframes rise{from{transform:translateY(20px);opacity:0}}
+@keyframes floatup{to{transform:translateY(-90px);opacity:0}}
+@keyframes fall{from{transform:translate(0,0) rotate(0)}to{transform:translate(var(--dx),108vh) rotate(var(--r))}}
+@keyframes fadein{from{opacity:0}}
+@keyframes zoomin{from{transform:scale(.5);opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (max-width:720px){
+  .mul-area{flex-direction:column}.tray{width:auto}
+  .helper{position:static;justify-content:flex-end;margin-bottom:6px}
+  .stage{margin-top:0}
+  .dots{order:5;flex-basis:100%;gap:5px}.dot{width:12px;height:12px}
+  .opt{width:78px;height:78px;font-size:32px}
+  .story-text{font-size:21px}
+  .disc{width:70px;height:70px;font-size:32px}
+  .opbtn{min-width:0;width:100%}
+}
+
+/* ---------- PRINT ---------- */
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff!important}
+  body>*:not(#print){display:none!important}
+  #print{display:block!important;font-family:'Baloo 2','Segoe UI',system-ui,sans-serif;color:#222}
+  .ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #845ef7;padding-bottom:6px;margin-bottom:10px}
+  .ph h1{margin:0;font-size:26px;color:#845ef7}
+  .ph .lv{font-size:15px;color:#555}
+  .pname{font-size:16px;margin-bottom:12px}
+  .pi{display:flex;gap:10px;border:2px solid #ccc;border-radius:14px;padding:10px 12px;margin-bottom:10px;break-inside:avoid;page-break-inside:avoid}
+  .pnum{width:30px;height:30px;border-radius:50%;background:#845ef7;color:#fff;font-weight:800;display:grid;place-items:center;flex:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pbody{flex:1}
+  .ptext{font-size:17px;line-height:1.35;margin-bottom:6px}
+  .pdraw{border:2px dashed #bbb;border-radius:10px;height:95px;font-size:12px;color:#999;padding:4px 8px;margin-bottom:6px}
+  .pline{font-size:16px;margin:4px 0}
+  .peq{font-size:24px;font-weight:800;margin-bottom:4px}
+  .pinst{font-size:13px;color:#555;margin-bottom:4px}
+  .pkey{break-before:page;page-break-before:always}
+  .pkey ol{font-size:18px;columns:2}
+  .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  .pgrid .pi.wide{grid-column:1/-1}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HOME / MAP -->
+  <section id="home">
+    <div class="home-top">
+      <div class="title"><span class="mascot">🦉</span><h1>Mate Visual</h1></div>
+      <div class="rankcard" id="rankCard"></div>
+    </div>
+    <div class="mapwrap"><div class="map" id="map"></div></div>
+    <div class="home-btns">
+      <button class="btn" id="printBtn">🖨️ Hoja para imprimir</button>
+      <button class="btn alt" id="resetBtn">🔄 Empezar de cero</button>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="hidden">
+    <div class="hud">
+      <button class="iconbtn" id="homeBtn" title="Volver al mapa">🗺️</button>
+      <div class="chip" id="lvChip"></div>
+      <div class="pill" id="scorePill">⭐ <span id="score">0</span></div>
+      <div class="pill" id="streakPill">🔥 <span id="streak">0</span></div>
+      <div class="dots" id="dots"></div>
+      <button class="iconbtn" id="soundBtn" title="Sonido">🔊</button>
+    </div>
+    <div class="stage">
+      <div class="helper"><div class="bubble" id="bubble"></div><div class="owl">🦉</div></div>
+      <div id="stage"></div>
+    </div>
+  </section>
+
+  <section id="end" class="hidden"></section>
+</div>
+<div id="print"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+/* ---------- level path ---------- */
+const LEVELS=[
+ {name:'Primeros grupos',icon:'🧱',h:12, types:['mul'],            ma:[2,3],mb:[2,5],dd:[2,3],dq:[2,4],story:0},
+ {name:'A repartir',     icon:'🍬',h:200,types:['div'],            ma:[2,3],mb:[2,5],dd:[2,3],dq:[2,5],story:0},
+ {name:'Primeras historias',icon:'📖',h:45,types:['mul','div'],    ma:[2,4],mb:[2,5],dd:[2,4],dq:[2,5],story:.6},
+ {name:'Armar grupos',   icon:'📦',h:150,types:['mul','grp'],      ma:[2,5],mb:[2,5],dd:[2,4],dq:[2,5],story:.5},
+ {name:'Tablas medianas',icon:'🚀',h:280,types:['mul'],            ma:[3,7],mb:[2,7],dd:[2,4],dq:[2,5],story:.3},
+ {name:'Gran reparto',   icon:'🎁',h:330,types:['div','grp'],      ma:[2,5],mb:[2,5],dd:[2,5],dq:[3,7],story:.4},
+ {name:'Detectives',     icon:'🔍',h:30, types:['mul','div','grp'],ma:[2,7],mb:[2,7],dd:[2,5],dq:[2,7],story:.8,extra:true},
+ {name:'Tablas grandes', icon:'🏔️',h:190,types:['mul'],            ma:[4,10],mb:[3,10],dd:[2,5],dq:[2,7],story:.3},
+ {name:'Reparto gigante',icon:'🐉',h:120,types:['div','grp'],      ma:[2,5],mb:[2,5],dd:[3,6],dq:[4,9],story:.4},
+ {name:'Cuentos difíciles',icon:'🧙',h:260,types:['mul','div','grp'],ma:[3,9],mb:[3,9],dd:[3,6],dq:[3,8],story:.9,extra:true},
+ {name:'Gran mezcla',    icon:'🌋',h:5,  types:['mul','div','grp'],ma:[2,10],mb:[2,10],dd:[2,6],dq:[2,9],story:.5,extra:true},
+ {name:'Castillo final', icon:'🏰',h:50, types:['mul','div','grp'],ma:[4,10],mb:[4,10],dd:[3,6],dq:[4,9],story:.6,extra:true},
+];
+const RANKS=[[0,'Semilla','🌱'],[100,'Aprendiz','📘'],[250,'Explorador','🧭'],[450,'Inventor','💡'],[700,'Científico','🔬'],[1000,'Mago de los números','🧙'],[1400,'Campeón','🏅'],[2000,'Leyenda','🏆']];
+const TOTAL=8;
+const ROW_COLORS=['#ff6b6b','#ffa94d','#fcc419','#69db7c','#38d9a9','#4dabf7','#748ffc','#9775fa','#f783ac','#ff922b'];
+const PLATE_COLORS=['#ff6b6b','#4dabf7','#51cf66','#ffa94d','#9775fa','#f06595'];
+const OPT_COLORS=['#ff922b','#4dabf7','#9775fa','#f06595'];
+const PRAISE=['¡Genial!','¡Excelente!','¡Muy bien!','¡Sos un crack!','¡Bárbaro!','¡Perfecto!','¡Increíble!'];
+const NAMES=['Luan','Sofi','Tomi','Mía','Benja','Emma','Valen','Juli','Nico','Lola'];
+
+/* ---------- story problems ---------- */
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const ST={
+ mul:[
+  (a,b,N)=>`${N} tiene ${a} cajas. En cada caja hay ${b} lápices de colores. ¿Cuántos lápices tiene en total?`,
+  (a,b,N)=>`En el aula hay ${a} mesas y en cada mesa se sientan ${b} chicos. ¿Cuántos chicos hay en el aula?`,
+  (a,b,N)=>`${N} compró ${a} paquetes de figuritas. Cada paquete trae ${b} figuritas. ¿Cuántas figuritas compró?`,
+  (a,b,N)=>`${N} lee ${b} páginas por día. ¿Cuántas páginas lee en ${a} días?`,
+  (a,b,N)=>`En la huerta hay ${a} filas de plantas de tomate. En cada fila hay ${b} plantas. ¿Cuántas plantas hay en la huerta?`,
+  (a,b,N)=>`${N} arma ${a} collares y cada collar tiene ${b} cuentas. ¿Cuántas cuentas usa en total?`,
+  (a,b,N)=>`Un micro hace ${a} viajes y en cada viaje lleva ${b} pasajeros. ¿Cuántos pasajeros llevó en total?`,
+ ],
+ mulX:[
+  (a,b,N)=>`En la granja hay ${a} gallineros con ${b} gallinas cada uno. También hay ${rnd(2,4)} perros. ¿Cuántas gallinas hay en la granja?`,
+  (a,b,N)=>`${N} tiene ${rnd(7,9)} años. Su abuela le regala ${a} bolsitas con ${b} caramelos cada una. ¿Cuántos caramelos recibe?`,
+  (a,b,N)=>`Un equipo jugó ${a} partidos y en cada partido metió ${b} goles. En total le hicieron ${rnd(1,3)} goles. ¿Cuántos goles metió el equipo?`,
+ ],
+ div:[
+  (n,d,q,N)=>`${N} tiene ${n} caramelos y los reparte en partes iguales entre ${d} amigos. ¿Cuántos caramelos recibe cada amigo?`,
+  (n,d,q,N)=>`La maestra tiene ${n} chicos y arma ${d} equipos con la misma cantidad. ¿Cuántos chicos hay en cada equipo?`,
+  (n,d,q,N)=>`${N} pone ${n} galletitas en ${d} platos, la misma cantidad en cada plato. ¿Cuántas galletitas hay en cada plato?`,
+  (n,d,q,N)=>`Hay ${n} figuritas para pegar en ${d} páginas del álbum, la misma cantidad en cada una. ¿Cuántas van en cada página?`,
+  (n,d,q,N)=>`${d} hermanos juntaron ${n} pesos y los reparten en partes iguales. ¿Cuántos pesos le tocan a cada uno?`,
+ ],
+ divX:[
+  (n,d,q,N)=>`${N} tiene ${n} caramelos y ${rnd(2,5)} chicles. Reparte solo los caramelos entre ${d} amigos, en partes iguales. ¿Cuántos caramelos recibe cada amigo?`,
+  (n,d,q,N)=>`En el recreo, ${n} chicos juegan a la pelota y ${rnd(3,6)} saltan la soga. Los que juegan a la pelota forman ${d} equipos iguales. ¿Cuántos chicos hay en cada equipo?`,
+ ],
+ grp:[
+  (n,d,q,N)=>`${N} tiene ${n} flores y arma ramos de ${q} flores. ¿Cuántos ramos puede armar?`,
+  (n,d,q,N)=>`Hay ${n} huevos y en cada caja entran ${q}. ¿Cuántas cajas se llenan?`,
+  (n,d,q,N)=>`En el cine hay ${n} chicos y en cada fila se sientan ${q}. ¿Cuántas filas ocupan?`,
+  (n,d,q,N)=>`${N} tiene ${n} figuritas y pega ${q} en cada página. ¿Cuántas páginas llena?`,
+  (n,d,q,N)=>`Para la excursión van ${n} chicos y en cada auto entran ${q}. ¿Cuántos autos se necesitan?`,
+ ],
+ grpX:[
+  (n,d,q,N)=>`En la biblioteca hay ${n} libros de cuentos y ${rnd(3,9)} revistas. ${N} pone ${q} libros de cuentos en cada estante. ¿Cuántos estantes usa?`,
+  (n,d,q,N)=>`${N} juntó ${n} caracoles en la playa y ${rnd(2,5)} piedras. Guarda los caracoles en bolsitas de ${q}. ¿Cuántas bolsitas usa?`,
+ ],
+};
+function makeStory(p,extra){
+  const N=pick(NAMES),k=p.kind,useX=extra&&Math.random()<.45;
+  const f=pick(ST[k+(useX?'X':'')]);
+  const t=k==='mul'?f(p.a,p.b,N):f(p.n,p.d,p.q,N);
+  return {t,q:t.slice(t.lastIndexOf('¿'))};
+}
+
+/* ---------- state & storage ---------- */
+const S={levelIdx:0,idx:0,score:0,streak:0,bestStreak:0,firstTry:0,results:[],cur:null,tries:0,locked:false,answered:false,choicesShown:false,gen:0,sound:true};
+let R={};
+const FRESH=()=>({xp:0,unlocked:1,lv:{},best:{},solved:0,champion:false});
+let store=FRESH();
+try{store=Object.assign(FRESH(),JSON.parse(localStorage.getItem('mateVisual2')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('mateVisual2',JSON.stringify(store))}catch(e){}};
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
+function later(fn,ms){const g=S.gen;setTimeout(()=>{if(g===S.gen)fn()},ms)}
+const rankOf=xp=>{let i=0;while(i+1<RANKS.length&&xp>=RANKS[i+1][0])i++;return i};
+const xpPct=xp=>{const i=rankOf(xp);if(i===RANKS.length-1)return 100;return Math.round((xp-RANKS[i][0])/(RANKS[i+1][0]-RANKS[i][0])*100)};
+const totalStars=()=>Object.values(store.lv).reduce((a,b)=>a+b,0);
+
+/* ---------- sound ---------- */
+let actx;
+function tone(f,dur=.12,type='sine',vol=.14,when=0){
+  if(!S.sound)return;
+  try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();
+    const t=actx.currentTime+when,o=actx.createOscillator(),g=actx.createGain();
+    o.type=type;o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+    o.connect(g).connect(actx.destination);o.start(t);o.stop(t+dur+.02)}catch(e){}
+}
+const sfx={
+  pop:()=>tone(660,.07,'triangle',.12),
+  drop:()=>{tone(330,.09,'triangle');tone(500,.08,'triangle',.1,.05)},
+  remove:()=>tone(240,.1,'triangle'),
+  count:i=>tone(392*Math.pow(1.122,i),.14,'sine',.16),
+  win:()=>[523,659,784,1046].forEach((f,i)=>tone(f,.2,'triangle',.15,i*.09)),
+  wrong:()=>{tone(220,.18,'sawtooth',.06);tone(170,.25,'sawtooth',.06,.12)},
+  star:i=>tone(700+i*200,.25,'triangle',.15),
+  fanfare:()=>[[523,0],[659,.12],[784,.24],[1046,.36],[784,.5],[1046,.62]].forEach(([f,w])=>tone(f,.28,'square',.06,w)),
+};
+
+/* ---------- helpers UI ---------- */
+function show(id){['home','game','end'].forEach(s=>$('#'+s).classList.toggle('hidden',s!==id));window.scrollTo(0,0)}
+function toast(t){const x=el('div','toast',t);document.body.append(x);setTimeout(()=>x.remove(),2400)}
+function modal(html){const bg=el('div','modal-bg'),m=el('div','modal',html);bg.append(m);document.body.append(bg);
+  bg.addEventListener('click',e=>{if(e.target===bg||e.target.closest('[data-close]'))bg.remove()});return bg}
+function overlay({icon,title,sub,btn}){
+  return new Promise(res=>{
+    const m=el('div','lvup',`<div class="rays"></div><div class="lvcard"><div class="lvicon">${icon}</div><h2>${title}</h2><p>${sub}</p><button class="btn green">${btn||'¡Vamos! 🚀'}</button></div>`);
+    document.body.append(m);sfx.fanfare();confetti(110,m);
+    m.querySelector('button').onclick=()=>{m.remove();res()};
+  });
+}
+function say(t,ms=2800){const b=$('#bubble');b.textContent=t;b.classList.add('on');clearTimeout(say.t);say.t=setTimeout(()=>b.classList.remove('on'),ms)}
+function bump(id){const p=$(id);p.classList.remove('bump');void p.offsetWidth;p.classList.add('bump')}
+
+/* ---------- HOME / MAP ---------- */
+function renderHome(){
+  const ri=rankOf(store.xp),r=RANKS[ri],nx=RANKS[ri+1];
+  $('#rankCard').innerHTML=`<div class="rk-icon">${r[2]}</div>
+    <div class="rk-body"><div class="rk-name">${r[1]}</div>
+      <div class="xpbar"><div class="xpfill" style="width:${xpPct(store.xp)}%"></div></div>
+      <div class="rk-sub">${nx?`${store.xp} / ${nx[0]} XP · próximo rango: ${nx[2]} ${nx[1]}`:`${store.xp} XP · ¡Rango máximo!`}</div></div>
+    <div class="rk-stars">⭐ ${totalStars()}<small>de ${LEVELS.length*3}</small></div>`;
+  const map=$('#map');map.innerHTML='';
+  const cols=map.clientWidth&&map.clientWidth<600?3:4;
+  map.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  map.append(document.createElementNS('http://www.w3.org/2000/svg','svg'));
+  LEVELS.forEach((L,i)=>{
+    const n=i+1,row=Math.floor(i/cols),col=row%2?cols-1-(i%cols):i%cols;
+    const locked=n>store.unlocked,stars=store.lv[n]||0,cur=n===store.unlocked;
+    const b=el('button','node'+(locked?' locked':'')+(cur?' cur':''));
+    b.style.gridRow=row+1;b.style.gridColumn=col+1;b.style.setProperty('--h',L.h);
+    b.innerHTML=`<div class="disc">${locked?'🔒':L.icon}</div><div class="lvnum">NIVEL ${n}</div><div class="lvname">${L.name}</div>
+      <div class="lvstars">${'★'.repeat(stars)}<span>${'★'.repeat(3-stars)}</span></div>${cur?'<div class="me">🦉</div>':''}`;
+    b.onclick=()=>{
+      if(locked){b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake');sfx.wrong();toast(`🔒 Conseguí 2 ⭐ en el nivel ${store.unlocked} para abrir más niveles`);return}
+      startLevel(i);
+    };
+    map.append(b);
+  });
+  requestAnimationFrame(drawPath);
+}
+function drawPath(){
+  const map=$('#map'),svg=map.querySelector('svg');if(!svg)return;
+  const mr=map.getBoundingClientRect();
+  const pts=[...map.querySelectorAll('.disc')].map(d=>{const r=d.getBoundingClientRect();return[r.left-mr.left+r.width/2,r.top-mr.top+r.height/2]});
+  const line=ps=>ps.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  svg.innerHTML=`<path d="${line(pts)}" fill="none" stroke="#dee2e6" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 18"/>
+    <path d="${line(pts.slice(0,store.unlocked))}" fill="none" stroke="#ffd43b" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+window.addEventListener('resize',()=>{if(!$('#home').classList.contains('hidden'))renderHome()});
+$('#homeBtn').onclick=()=>{S.gen++;show('home');renderHome()};
+$('#soundBtn').onclick=()=>{S.sound=!S.sound;$('#soundBtn').textContent=S.sound?'🔊':'🔇'};
+$('#resetBtn').onclick=()=>{
+  const m=modal(`<h2>🔄 ¿Empezar de cero?</h2><p>Se borran todos los niveles, estrellas, XP y récords. Volvés al nivel 1 como 🌱 Semilla.</p>
+    <div class="mbtns"><button class="btn alt" data-close>Cancelar</button><button class="btn red" id="doReset">Sí, borrar todo</button></div>`);
+  m.querySelector('#doReset').onclick=()=>{store=FRESH();save();m.remove();renderHome();toast('¡Listo! Empezamos de nuevo 🌱')};
+};
+$('#printBtn').onclick=openPrint;
+
+/* ---------- game flow ---------- */
+function startLevel(i){
+  S.gen++;Object.assign(S,{levelIdx:i,idx:0,score:0,streak:0,bestStreak:0,firstTry:0,results:[]});
+  sfx.pop();show('game');
+  const L=LEVELS[i];$('#lvChip').textContent=`Nivel ${i+1} · ${L.icon} ${L.name}`;
+  updateHud();renderProblem();
+}
+function updateHud(){
+  $('#score').textContent=S.score;$('#streak').textContent=S.streak;
+  $('#streakPill').classList.toggle('hot',S.streak>=3);
+  const d=$('#dots');d.innerHTML='';
+  for(let i=0;i<TOTAL;i++){const x=el('div','dot');if(S.results[i])x.classList.add(S.results[i]);else if(i===S.idx)x.classList.add('cur');d.append(x)}
+}
+
+let lastKey='';
+function makeProblem(L,storyRate=L.story){
+  let p,k,g=0;
+  do{
+    const kind=pick(L.types);
+    if(kind==='mul'){const a=rnd(...L.ma),b=rnd(...L.mb);p={kind,op:'mul',a,b,ans:a*b,rows:a,size:b}}
+    else if(kind==='div'){const d=rnd(...L.dd),q=rnd(...L.dq);p={kind,op:'div',d,q,n:d*q,ans:q}}
+    else{const d=rnd(...L.dd),q=rnd(...L.dq);p={kind:'grp',op:'div',d,q,n:d*q,ans:d,rows:d,size:q}}
+    k=JSON.stringify(p);
+  }while(k===lastKey&&g++<20);
+  lastKey=k;
+  const A=p.ans;
+  let c=p.kind==='mul'?[A+p.b,A-p.b,A+p.a,A-p.a,A+1,A-1,p.a+p.b,A+2]:[A+1,A-1,A+2,A-2,p.kind==='div'?p.d:p.q,A+3];
+  c=shuffle([...new Set(c.filter(x=>x>0&&x!==A))]);
+  p.choices=shuffle([A,...c.slice(0,3)]);
+  if(Math.random()<storyRate)p.story=makeStory(p,L.extra);
+  return p;
+}
+const eqText=p=>p.kind==='mul'?`${p.a} × ${p.b}`:p.kind==='div'?`${p.n} ÷ ${p.d}`:`${p.n} ÷ ${p.q}`;
+
+function renderProblem(){
+  const p=S.cur=makeProblem(LEVELS[S.levelIdx]);
+  Object.assign(S,{tries:0,locked:false,answered:false,choicesShown:false});
+  updateHud();
+  const stage=$('#stage');stage.innerHTML='';R={};
+  if(p.story){
+    const card=el('div','story',`<div class="story-ico">📖</div><div><div class="story-text">${p.story.t.replace(/\d+/g,'<span class="num">$&</span>')}</div>
+      <div class="story-tip">Tip: hacé clic en los números importantes para marcarlos ✏️</div></div>`);
+    card.querySelectorAll('.num').forEach(s=>s.onclick=()=>{s.classList.toggle('mark');sfx.pop()});
+    const opq=el('div','opq','<div class="q">🤔 ¿Qué cuenta tenés que hacer?</div>');
+    const ops=el('div','ops');
+    [['mul','×','Multiplicar','juntar grupos iguales','#ff922b'],['div','÷','Dividir','repartir o armar grupos','#4dabf7']].forEach(([op,sym,name,desc,c])=>{
+      const b=el('button','opbtn',`<span class="opsym">${sym}</span><span><b>${name}</b><small>${desc}</small></span>`);
+      b.style.setProperty('--c',c);b.onclick=()=>chooseOp(op,b,card,opq);ops.append(b);
+    });
+    opq.append(ops);stage.append(card,opq);
+    say('Leé el problema con atención 📖',3000);
+  }else buildVisual(p);
+}
+function chooseOp(op,btn,card,opq){
+  const p=S.cur;if(btn.disabled)return;
+  if(op===p.op){
+    btn.classList.add('right');sfx.pop();say('¡Bien pensado! 🧠');
+    later(()=>{opq.remove();card.classList.add('compact');buildVisual(p)},600);
+  }else{
+    S.tries++;S.streak=0;updateHud();btn.classList.add('wrong');btn.disabled=true;sfx.wrong();
+    say(p.op==='mul'?'Mmm… Hay varios grupos con la misma cantidad y queremos saber cuántos hay en total.':
+      'Mmm… Ya sabemos cuántos hay en total y hay que repartirlos o armar grupos iguales.',4500);
+  }
+}
+function buildVisual(p){
+  const stage=$('#stage');
+  const instr=p.kind==='mul'?`Poné <b>${p.a}</b> filas de <b>${p.b}</b> cubos en el tablero`
+    :p.kind==='div'?`Repartí los <b>${p.n}</b> cubos entre <b>${p.d}</b> amigos.<br>¡Todos tienen que recibir lo mismo!`
+    :`Armá grupos de <b>${p.q}</b> cubos hasta llegar a <b>${p.n}</b>`;
+  const task=el('div','task',`<div class="eq">${eqText(p)} = <span class="qmark">?</span></div><div class="instr">${instr}</div>`);
+  stage.append(task);R.task=task;
+  if(p.kind==='div')renderPlates(p,stage);else renderBoard(p,stage);
+}
+
+/* ---------- BOARD: multiplication & grouping ---------- */
+function renderBoard(p,stage){
+  stage.style.setProperty('--cs',Math.max(p.rows,p.size)>7?'30px':'38px');
+  const area=el('div','mul-area'),tray=el('div','tray');
+  tray.append(el('div','tray-title',`Barra de ${p.size}`));
+  const rod=el('div','rod');rod.dataset.drag='rod';
+  for(let i=0;i<p.size;i++)rod.append(el('i','cube'));
+  tray.append(rod,el('div','tray-hint','👆 Arrastrala al tablero<br>o hacé clic en ella'));
+  const know=el('button','btn alt','🤔 Ya lo sé');know.onclick=()=>{sfx.pop();showChoices(p.story?p.story.q:`¿Cuánto es ${eqText(p)}?`)};
+  tray.append(know);
+  const board=el('div','board');board.dataset.drop='board';
+  board.append(el('div','board-empty','Soltá las barras acá ⬇'));
+  const rows=el('div','rows');board.append(rows);
+  area.append(tray,board);
+  const status=el('div','status'),choices=el('div','choices hidden');
+  stage.append(area,status,choices);
+  Object.assign(R,{board,rows,status,choices,rod,know});
+  updateBoardStatus();
+  if(!p.story)say(p.kind==='mul'?`¡Armá ${p.a} filas de ${p.b}!`:`¿Cuántos grupos de ${p.q} entran en ${p.n}?`);
+}
+const rowCount=()=>R.rows.querySelectorAll('.row:not(.leaving)').length;
+function addRow(fromRect){
+  const p=S.cur;if(S.locked)return;
+  if(rowCount()>=12){say('¡Uy, ya hay muchas filas!');return}
+  const i=rowCount(),row=el('div','row'),col=ROW_COLORS[i%ROW_COLORS.length];
+  if(p.kind==='grp')row.append(el('span','grpnum'));
+  for(let k=0;k<p.size;k++){const c=el('i','cube');c.style.background=col;row.append(c)}
+  row.append(el('span','row-label'));
+  row.title='Clic para sacar esta fila';
+  row.onclick=()=>removeRow(row);
+  R.rows.append(row);
+  if(fromRect)flip(row,fromRect);else row.classList.add('drop-in');
+  sfx.drop();updateBoardStatus();
+}
+function removeRow(row){
+  if(S.locked||row.classList.contains('leaving'))return;
+  row.classList.add('leaving');sfx.remove();
+  setTimeout(()=>{row.remove();R.rows.querySelectorAll('.row').forEach((r,i)=>r.querySelectorAll('.cube').forEach(c=>c.style.background=ROW_COLORS[i%ROW_COLORS.length]))},250);
+  updateBoardStatus();
+}
+function updateBoardStatus(){
+  const p=S.cur,n=rowCount();
+  R.board.querySelector('.board-empty').classList.toggle('hidden',n>0);
+  let msg,cls='';
+  if(p.kind==='mul'){
+    if(n<p.rows)msg=`Filas: <b>${n}</b> de <b>${p.rows}</b>`;
+    else if(n===p.rows){msg='¡Listo! Vamos a contar…';cls='good'}
+    else{msg=`¡Te pasaste! Hay <b>${n}</b> filas. Hacé clic en una fila para sacarla.`;cls='warn'}
+  }else{
+    const tot=n*p.size;
+    if(tot<p.n)msg=`Cubos: <b>${tot}</b> de <b>${p.n}</b>`;
+    else if(tot===p.n){msg=`¡Llegaste a ${p.n}! Vamos a contar los grupos…`;cls='good'}
+    else{msg=`¡Te pasaste de ${p.n}! Hay <b>${tot}</b> cubos. Sacá una fila.`;cls='warn'}
+  }
+  R.status.innerHTML=msg;R.status.className='status '+cls;
+  clearTimeout(S.countTimer);
+  if(n===p.rows){const g=S.gen;S.countTimer=setTimeout(()=>{if(g===S.gen&&rowCount()===p.rows)countRows()},500)}
+}
+async function countRows(){
+  const p=S.cur,g=S.gen;S.locked=true;R.board.classList.add('locked');R.rod.style.opacity=.4;
+  const rows=[...R.rows.querySelectorAll('.row')],seq=[];
+  for(let i=0;i<rows.length;i++){
+    if(g!==S.gen)return;
+    rows[i].classList.remove('counted');void rows[i].offsetWidth;rows[i].classList.add('counted');
+    const lb=rows[i].querySelector('.row-label');lb.textContent=p.size*(i+1);lb.classList.add('show');
+    const gn=rows[i].querySelector('.grpnum');if(gn){gn.textContent=i+1;gn.classList.add('show')}
+    seq.push(p.size*(i+1));
+    R.status.innerHTML=(p.kind==='mul'?'Contamos de a '+p.size+': ':'Grupos de '+p.size+': ')+'<b>'+seq.join(' → ')+'</b>';R.status.className='status good';
+    sfx.count(i);await sleep(480);
+  }
+  if(g!==S.gen)return;
+  showChoices(p.story?p.story.q:p.kind==='mul'?'¿Cuántos cubos hay en total?':`¿Cuántos grupos de ${p.q} armaste?`);
+}
+
+/* ---------- PLATES: division by sharing ---------- */
+function renderPlates(p,stage){
+  stage.style.setProperty('--cs',p.n>30?'27px':p.n>18?'31px':'36px');
+  const wrap=el('div','pile-wrap');wrap.dataset.drop='pile';
+  const head=el('div','pile-head'),title=el('div','pile-title');
+  const deal=el('button','btn','🔄 Repartir una vuelta');deal.onclick=dealRound;
+  const know=el('button','btn alt','🤔 Ya lo sé');know.onclick=()=>{sfx.pop();showChoices(p.story?p.story.q:`¿Cuánto es ${eqText(p)}?`)};
+  head.append(title,deal,know);
+  const pile=el('div','pile');
+  for(let i=0;i<p.n;i++){const c=el('i','cube dcube');c.dataset.drag='cube';pile.append(c)}
+  wrap.append(head,pile);
+  const plates=el('div','plates');
+  for(let i=0;i<p.d;i++){
+    const pl=el('div','plate');pl.dataset.drop='plate';pl.style.setProperty('--pc',PLATE_COLORS[i]);
+    pl.innerHTML='<div class="face"><span class="eye"></span><span class="eye"></span><span class="mouth"></span></div><div class="pcubes"></div><div class="badge">0</div>';
+    plates.append(pl);
+  }
+  const status=el('div','status'),choices=el('div','choices hidden');
+  stage.append(wrap,plates,status,choices);
+  Object.assign(R,{wrap,pile,plates,title,deal,know,status,choices});
+  updateDiv(true);
+  if(!p.story)say('¡Arrastrá cubos a cada amigo!');
+}
+const plateList=()=>[...R.plates.querySelectorAll('.plate')];
+const plateCount=pl=>pl.querySelector('.pcubes').children.length;
+function moveCube(cube,container,fromRect){
+  const first=fromRect||cube.getBoundingClientRect();
+  container.append(cube);
+  const plate=container.closest('.plate');
+  cube.style.background=plate?plate.style.getPropertyValue('--pc'):'';
+  cube.style.visibility='';
+  flip(cube,first);
+  if(plate){plate.classList.remove('gulp');void plate.offsetWidth;plate.classList.add('gulp','fed');setTimeout(()=>plate.classList.remove('fed'),400)}
+  sfx.pop();updateDiv();
+}
+async function dealRound(){
+  if(S.locked)return;R.deal.disabled=true;
+  for(const pl of plateList()){const c=R.pile.lastElementChild;if(!c)break;moveCube(c,pl.querySelector('.pcubes'));await sleep(130)}
+  if(R.deal)R.deal.disabled=S.locked;
+}
+function updateDiv(init){
+  const left=R.pile.children.length,counts=plateList().map(plateCount);
+  plateList().forEach((pl,i)=>pl.querySelector('.badge').textContent=counts[i]);
+  R.title.textContent=left?`Cubos para repartir: ${left}`:'¡No quedan cubos!';
+  if(init){R.status.innerHTML='Hacé clic en un cubo o arrastralo hasta un amigo';R.status.className='status';return}
+  if(left>0){R.status.innerHTML=`Quedan <b>${left}</b> cubos por repartir`;R.status.className='status';return}
+  if(counts.every(c=>c===counts[0])){
+    S.locked=true;R.deal.disabled=true;
+    R.status.innerHTML='¡Todos tienen lo mismo! 🎉';R.status.className='status good';
+    plateList().forEach((pl,i)=>setTimeout(()=>pl.classList.add('happy'),i*120));
+    tone(600,.15,'triangle');tone(800,.2,'triangle',.14,.12);
+    later(()=>showChoices(S.cur.story?S.cur.story.q:'¿Cuántos cubos recibió cada amigo?'),700);
+  }else{
+    R.status.innerHTML='Hay amigos con más cubos que otros. ¡Mové cubos para emparejar!';R.status.className='status warn';
+    say('Mmm… ¡no es justo! 😅');
+  }
+}
+
+/* ---------- choices & answers ---------- */
+function showChoices(q){
+  if(S.choicesShown)return;S.choicesShown=true;
+  R.know.classList.add('hidden');R.choices.classList.remove('hidden');
+  R.choices.innerHTML=`<div class="q">${q}</div>`;
+  const opts=el('div','opts');
+  S.cur.choices.forEach((v,i)=>{const b=el('button','opt',v);b.style.setProperty('--c',OPT_COLORS[i]);b.onclick=()=>answer(v,b);opts.append(b)});
+  R.choices.append(opts);
+  R.choices.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function answer(v,btn){
+  if(S.answered||btn.disabled)return;
+  const p=S.cur;
+  if(v===p.ans){
+    S.answered=true;const first=S.tries===0;
+    let pts=p.story?15:10;if(!first)pts=Math.ceil(pts/2);
+    if(first){S.streak++;S.firstTry++;S.bestStreak=Math.max(S.bestStreak,S.streak);if(S.streak>=3)pts+=5}
+    S.score+=pts;S.results[S.idx]=first?'ok':'meh';store.solved++;save();
+    btn.classList.add('right');
+    const q=R.task.querySelector('.qmark');q.textContent=p.ans;q.classList.add('solved');
+    if(p.kind==='div')plateList().forEach((pl,i)=>setTimeout(()=>pl.querySelector('.badge').classList.add('show'),i*100));
+    floatText('+'+pts,btn);confetti();sfx.win();
+    say(pick(PRAISE)+(S.streak>=3?` ¡Racha de ${S.streak}! 🔥`:''));
+    updateHud();bump('#scorePill');if(first)bump('#streakPill');
+    document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+    later(next,1900);
+  }else{
+    S.tries++;S.streak=0;btn.classList.add('wrong');btn.disabled=true;sfx.wrong();updateHud();hint();
+  }
+}
+function hint(){
+  const p=S.cur;
+  if(p.kind!=='div'){
+    if(S.locked){
+      say(p.kind==='mul'?'Mirá el último número de la cuenta: ese es el total 👀':'Contá cuántas filas armaste: cada fila es un grupo 👀',3800);
+      [...R.rows.querySelectorAll('.row')].forEach((r,i)=>setTimeout(()=>{r.classList.remove('counted');void r.offsetWidth;r.classList.add('counted');sfx.count(i)},i*250));
+    }else say('Probá armarlo con las barras, ¡ayuda un montón! 🧱',3500);
+  }else{
+    if(S.locked){
+      say('Contá los cubos de un solo amigo 👀',3500);
+      const pl=plateList()[0];pl.classList.remove('flash');void pl.offsetWidth;pl.classList.add('flash');
+    }else say('Repartí los cubos y contá los de un amigo 🧱',3500);
+  }
+}
+function next(){S.idx++;if(S.idx>=TOTAL)endGame();else renderProblem()}
+
+/* ---------- END + progression ---------- */
+function endGame(){
+  const L=LEVELS[S.levelIdx],lvn=S.levelIdx+1;
+  const stars=S.firstTry>=7?3:S.firstTry>=5?2:1;
+  if(stars>(store.lv[lvn]||0))store.lv[lvn]=stars;
+  const rec=S.score>(store.best[lvn]||0);if(rec)store.best[lvn]=S.score;
+  const oldXp=store.xp,oldRank=rankOf(oldXp);store.xp+=S.score;const newRank=rankOf(store.xp);
+  let unlockedNew=false,champion=false;
+  if(stars>=2&&lvn===store.unlocked&&lvn<LEVELS.length){store.unlocked++;unlockedNew=true}
+  if(stars>=2&&lvn===LEVELS.length&&!store.champion){store.champion=true;champion=true}
+  save();
+  const canNext=lvn<store.unlocked&&lvn<LEVELS.length;
+  const e=$('#end');
+  e.innerHTML=`<div class="end">
+    <div class="endlv">Nivel ${lvn} · ${L.icon} ${L.name}</div>
+    <h2>${stars===3?'¡Increíble!':stars===2?'¡Muy bien!':'¡Buen intento!'}</h2>
+    <div class="bigstars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+    ${rec?'<div class="record">🏆 ¡Nuevo récord en este nivel!</div>':''}
+    <div class="stats">
+      <div class="stat"><b>${S.score}</b><span>puntos</span></div>
+      <div class="stat"><b>${S.firstTry}/${TOTAL}</b><span>al primer intento</span></div>
+      <div class="stat"><b>${S.bestStreak}</b><span>mejor racha 🔥</span></div>
+    </div>
+    <div class="xpbox"><div class="xphead"><span id="xpRank">${RANKS[oldRank][2]} ${RANKS[oldRank][1]}</span><span class="xpgain">+${S.score} XP</span></div>
+      <div class="xpbar"><div class="xpfill" id="xpFill" style="width:${xpPct(oldXp)}%"></div></div></div>
+    ${stars<2&&lvn===store.unlocked?'<div class="need">Para abrir el nivel siguiente necesitás 2 ⭐ (5 bien al primer intento). ¡Vos podés! 💪</div>':''}
+    <div class="endbtns">
+      ${canNext?'<button class="btn green" id="nextLv">▶ Siguiente nivel</button>':''}
+      <button class="btn" id="again">🔁 Repetir nivel</button>
+      <button class="btn alt" id="menu">🗺️ Mapa</button></div></div>`;
+  show('end');
+  if(canNext)$('#nextLv').onclick=()=>startLevel(S.levelIdx+1);
+  $('#again').onclick=()=>startLevel(S.levelIdx);
+  $('#menu').onclick=()=>{show('home');renderHome()};
+  const g=S.gen;
+  (async()=>{
+    const spans=e.querySelectorAll('.bigstars span');
+    for(let i=0;i<stars;i++){await sleep(450);if(g!==S.gen)return;spans[i].classList.add('on');sfx.star(i)}
+    await sleep(400);if(g!==S.gen)return;
+    const fill=$('#xpFill');
+    if(newRank>oldRank){
+      fill.style.width='100%';await sleep(1100);
+      $('#xpRank').textContent=`${RANKS[newRank][2]} ${RANKS[newRank][1]}`;
+      fill.style.transition='none';fill.style.width='0%';void fill.offsetWidth;fill.style.transition='';
+    }
+    fill.style.width=xpPct(store.xp)+'%';
+    await sleep(900);if(g!==S.gen)return;
+    if(stars===3)confetti(100);
+    if(unlockedNew){const nx=LEVELS[lvn];await overlay({icon:nx.icon,title:`¡Nivel ${lvn+1} desbloqueado!`,sub:`<b>${nx.name}</b> te está esperando en el mapa`})}
+    if(newRank>oldRank){const r=RANKS[newRank];await overlay({icon:r[2],title:'¡Subiste de rango!',sub:`Ahora sos <b>${r[1]}</b>`,btn:'¡Genial! 🎉'})}
+    if(champion)await overlay({icon:'👑',title:'¡Conquistaste el castillo!',sub:'Completaste todos los niveles. ¡Sos un maestro de la multiplicación y la división!',btn:'¡Soy campeón! 🏆'});
+  })();
+}
+
+/* ---------- PRINT ---------- */
+function openPrint(){
+  const opts=LEVELS.map((L,i)=>`<option value="${i}" ${i===store.unlocked-1?'selected':''}>Nivel ${i+1} · ${L.name}</option>`).join('');
+  const m=modal(`<h2>🖨️ Hoja para imprimir</h2>
+    <label>Nivel <select id="pLevel">${opts}</select></label>
+    <label>Ejercicios <select id="pCount"><option>6</option><option selected>8</option><option>10</option><option>12</option></select></label>
+    <label><input type="checkbox" id="pStory" checked> Incluir problemas para leer y pensar</label>
+    <label><input type="checkbox" id="pKey" checked> Hoja de respuestas al final</label>
+    <div class="mbtns"><button class="btn alt" data-close>Cancelar</button><button class="btn green" id="pGo">🖨️ Imprimir</button></div>`);
+  m.querySelector('#pGo').onclick=()=>{
+    buildPrint(+m.querySelector('#pLevel').value,+m.querySelector('#pCount').value,m.querySelector('#pStory').checked,m.querySelector('#pKey').checked);
+    m.remove();setTimeout(()=>window.print(),150);
+  };
+}
+function svgSquares(rows,size){
+  const s=20,g=4,w=size*(s+g)+60,h=rows*(s+g);
+  let r='';for(let i=0;i<rows;i++){for(let j=0;j<size;j++)r+=`<rect x="${j*(s+g)}" y="${i*(s+g)}" width="${s}" height="${s}" rx="4" fill="none" stroke="#888" stroke-width="1.5"/>`;
+    r+=`<line x1="${size*(s+g)+10}" y1="${i*(s+g)+s}" x2="${size*(s+g)+52}" y2="${i*(s+g)+s}" stroke="#aaa" stroke-width="1.5"/>`}
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${r}</svg>`;
+}
+function svgDots(n,perRow=10){
+  const s=22,rows=Math.ceil(n/perRow),w=Math.min(n,perRow)*s,h=rows*s;let r='';
+  for(let i=0;i<n;i++)r+=`<circle cx="${(i%perRow)*s+s/2}" cy="${Math.floor(i/perRow)*s+s/2}" r="7" fill="none" stroke="#666" stroke-width="1.8"/>`;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${r}</svg>`;
+}
+function svgPlates(d){
+  const s=92,w=d*(s+10);let r='';
+  for(let i=0;i<d;i++)r+=`<circle cx="${i*(s+10)+s/2}" cy="${s/2}" r="${s/2-3}" fill="none" stroke="#888" stroke-width="2" stroke-dasharray="5 4"/>`;
+  return `<svg width="${w}" height="${s}" viewBox="0 0 ${w} ${s}">${r}</svg>`;
+}
+function buildPrint(li,count,withStory,withKey){
+  const L=LEVELS[li],probs=[];
+  for(let i=0;i<count;i++)probs.push(makeProblem(L,withStory?(i%2===0?1:0):0));
+  probs.sort((a,b)=>(a.story?1:0)-(b.story?1:0));
+  const items=probs.map((p,i)=>{
+    let b;
+    if(p.story){
+      b=`<div class="ptext">${p.story.t}</div><div class="pdraw">Dibujá acá ✏️</div>
+        <div class="pline">Marcá la cuenta: &nbsp; ✕ multiplicar &nbsp;&nbsp; ÷ dividir</div>
+        <div class="pline">Cuenta: ______ ○ ______ = ______ &nbsp;&nbsp; Respuesta: ____________________</div>`;
+    }else if(p.kind==='mul'){
+      b=`<div class="peq">${eqText(p)} = ______</div><div class="pinst">Pintá las filas y escribí al lado cuánto llevás contando de a ${p.b}.</div>${svgSquares(p.a,p.b)}`;
+    }else if(p.kind==='div'){
+      b=`<div class="peq">${eqText(p)} = ______</div><div class="pinst">Tachá un puntito y dibujalo en un círculo. Repartí todos: ¿cuántos quedan en cada círculo?</div>${svgDots(p.n)}<br>${svgPlates(p.d)}`;
+    }else{
+      b=`<div class="peq">${eqText(p)} = ______</div><div class="pinst">Encerrá grupos de ${p.q} puntitos. ¿Cuántos grupos armaste?</div>${svgDots(p.n,p.q<=5?p.q*2:p.q)}`;
+    }
+    return `<div class="pi${p.story?' wide':''}"><div class="pnum">${i+1}</div><div class="pbody">${b}</div></div>`;
+  }).join('');
+  $('#print').innerHTML=`<div class="ph"><h1>🦉 Mate Visual · Hoja de práctica</h1><div class="lv">Nivel ${li+1} · ${L.name}</div></div>
+    <div class="pname">Nombre: ______________________________ &nbsp;&nbsp; Fecha: ______________ &nbsp;&nbsp; ⭐ ⭐ ⭐</div>
+    <div class="pgrid">${items}</div>
+    ${withKey?`<div class="pkey"><div class="ph"><h1>Respuestas</h1><div class="lv">Nivel ${li+1} · ${L.name}</div></div>
+      <ol>${probs.map(p=>`<li>${eqText(p)} = <b>${p.ans}</b></li>`).join('')}</ol></div>`:''}`;
+}
+
+/* ---------- effects ---------- */
+function flip(node,first){
+  const last=node.getBoundingClientRect();
+  node.style.transition='none';
+  node.style.transform=`translate(${first.left-last.left}px,${first.top-last.top}px)`;
+  void node.offsetWidth;
+  node.style.transition='transform .38s cubic-bezier(.3,1.35,.6,1)';
+  node.style.transform='';
+  setTimeout(()=>{node.style.transition=''},420);
+}
+function floatText(t,ref){
+  const r=ref.getBoundingClientRect(),f=el('div','floatpts',t);
+  f.style.left=(r.left+r.width/2-30)+'px';f.style.top=(r.top-10)+'px';
+  document.body.append(f);setTimeout(()=>f.remove(),1300);
+}
+function confetti(n=70,parent=document.body){
+  const cols=['#ff6b6b','#fcc419','#51cf66','#4dabf7','#9775fa','#f06595','#ff922b'];
+  for(let i=0;i<n;i++){
+    const c=el('i','confetti');
+    c.style.left=Math.random()*100+'vw';c.style.background=cols[i%cols.length];
+    c.style.setProperty('--dx',(Math.random()*240-120)+'px');c.style.setProperty('--r',(Math.random()*900-450)+'deg');
+    c.style.animationDuration=(1.4+Math.random()*1.4)+'s';c.style.animationDelay=(Math.random()*.35)+'s';
+    parent.insertBefore(c,parent===document.body?null:parent.querySelector('.lvcard'));setTimeout(()=>c.remove(),3400);
+  }
+}
+
+/* ---------- drag & drop (mouse + touch) ---------- */
+let drag=null;
+const targetAt=e=>{const t=document.elementFromPoint(e.clientX,e.clientY);return t?t.closest('[data-drop]'):null};
+document.addEventListener('pointerdown',e=>{
+  const t=e.target.closest('[data-drag]');
+  if(!t||S.locked||e.button>0)return;
+  e.preventDefault();
+  drag={el:t,x0:e.clientX,y0:e.clientY,moved:false,rect:t.getBoundingClientRect()};
+});
+document.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  const dx=e.clientX-drag.x0,dy=e.clientY-drag.y0;
+  if(!drag.moved){
+    if(Math.hypot(dx,dy)<6)return;
+    drag.moved=true;
+    const g=drag.el.cloneNode(true),r=drag.rect;
+    g.classList.add('ghost');g.removeAttribute('data-drag');
+    g.style.setProperty('--cs',getComputedStyle($('#stage')).getPropertyValue('--cs'));
+    Object.assign(g.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'});
+    document.body.append(g);drag.ghost=g;
+    if(drag.el.dataset.drag==='cube')drag.el.style.visibility='hidden';
+  }
+  drag.ghost.style.transform=`translate(${dx}px,${dy}px) scale(1.1) rotate(-4deg)`;
+  const t=targetAt(e);
+  if(t!==drag.over){if(drag.over)drag.over.classList.remove('over');if(t)t.classList.add('over');drag.over=t}
+});
+function endDrag(e,cancel){
+  if(!drag)return;const d=drag;drag=null;
+  if(!d.moved){if(!cancel)clickDraggable(d.el);return}
+  if(d.over)d.over.classList.remove('over');
+  const tgt=cancel?null:targetAt(e);
+  const r=d.ghost.getBoundingClientRect();d.ghost.remove();
+  if(d.el.dataset.drag==='rod'){if(tgt&&tgt.dataset.drop==='board')addRow(r);return}
+  let container=d.el.parentElement;
+  if(tgt&&!S.locked){
+    if(tgt.dataset.drop==='pile')container=R.pile;
+    else if(tgt.dataset.drop==='plate')container=tgt.querySelector('.pcubes');
+  }
+  moveCube(d.el,container,r);
+}
+document.addEventListener('pointerup',e=>endDrag(e,false));
+document.addEventListener('pointercancel',e=>endDrag(e,true));
+function clickDraggable(t){
+  if(S.locked)return;
+  if(t.dataset.drag==='rod'){addRow(null);return}
+  if(t.parentElement===R.pile){
+    const pls=plateList(),min=Math.min(...pls.map(plateCount));
+    moveCube(t,pls.find(p=>plateCount(p)===min).querySelector('.pcubes'));
+  }else moveCube(t,R.pile);
+}
+
+renderHome();
+</script>
+</body>
+</html>
