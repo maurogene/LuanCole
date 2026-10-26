@@ -3,7 +3,9 @@
 App para el navegador para practicar **multiplicación y división** de forma visual, pensada para chicos de 8 años (estilo synthesis.is).
 
 ## Cómo usarla
-Descargá `mate-visual.html` y abrilo con doble clic en cualquier navegador. No necesita instalación ni internet.
+**Jugar online:** https://maurogene.github.io/LuanCole/
+
+O también: Descargá `mate-visual.html` y abrilo con doble clic en cualquier navegador. No necesita instalación ni internet.
 
 ## Qué tiene
 - **Multiplicación con bloques:** arrastrás barras de cubos al tablero y se cuentan con animación.
